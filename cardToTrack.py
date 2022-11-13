@@ -519,27 +519,6 @@ def matchOriginalCard(nodes, copySetUp):
     copySetUp["copyAxis"]['uniform_scale'].setValue(nodes["Card"]['uniform_scale'].value())
 
 
-def getVertexPanel(verts):
-    """pop panel for vertex to track (card to track but with selected vertex
-
-    :param verts: selected vertices
-    :type verts: list
-    :return: Panel
-    :rtype: nuke.Panel()
-    """
-    panel = nuke.Panel('{0} Vertex to Track'.format(getNumVerts(verts)))
-
-    panel.addEnumerationPulldown('Get nodes:', 'all "CornerPin (4 vertices or Card)" Transform Tracker Roto')
-    panel.addEnumerationPulldown('Full SetUp', 'No Yes')
-    panel.addSingleLineInput('FrameRange', "{0}-{1}".format(nuke.root().firstFrame(), nuke.root().lastFrame()))
-    panel.addSingleLineInput('Ref Frame', nuke.frame())
-    panel.addSingleLineInput('Roto layer name', "C2T")
-
-    panel.setWidth(300)
-
-    return panel
-
-
 def getCardPanel():
     """pop panel for card to track
 
@@ -549,130 +528,12 @@ def getCardPanel():
 
     panel = nuke.Panel('Card to Track')
     panel.addEnumerationPulldown('Get nodes:', 'all "CornerPin (4 vertices or Card)" Transform Tracker Roto')
-    panel.addEnumerationPulldown('Full SetUp', 'No Yes')
     panel.addSingleLineInput('FrameRange', "{0}-{1}".format(nuke.root().firstFrame(), nuke.root().lastFrame()))
     panel.addSingleLineInput('Ref Frame', nuke.frame())
     panel.addSingleLineInput('Roto layer name', "C2T")
     panel.setWidth(300)
 
     return panel
-
-
-def getAxisPanel():
-    """pop panel for card to track
-
-    :return: Panel
-    :rtype: nuke.Panel()
-    """
-
-    panel = nuke.Panel('Axis to Track')
-    panel.addEnumerationPulldown('Get nodes:', 'all Transform Tracker Roto')
-    panel.addEnumerationPulldown('Full SetUp', 'No Yes')
-    panel.addSingleLineInput('FrameRange', "{0}-{1}".format(nuke.root().firstFrame(), nuke.root().lastFrame()))
-    panel.addSingleLineInput('Ref Frame', nuke.frame())
-    panel.addSingleLineInput('Roto layer name', "C2T")
-    panel.setWidth(300)
-
-    return panel
-
-
-def getFullSetUp(nodes, refFrame):
-    """Create a setup that is ready to comp
-
-    :param nodes: dict of rgb source, camera, card
-    :type nodes: dict
-    :param refFrame: reference frame
-    :type refFrame: int
-    """
-    setUp = {}
-
-    try:
-        nodes['transform']['ypos'].setValue(nodes['Card']['ypos'].value() + 600)
-        nodes['transform']['xpos'].setValue(nodes['Card']['xpos'].value())
-    except:
-        nodes['transform']['ypos'].setValue(nodes['Cam']['ypos'].value() + 600)
-        nodes['transform']['xpos'].setValue(nodes['Cam']['xpos'].value())
-    try:
-        nodes['transform']['ypos'].setValue(nodes['Axis']['ypos'].value() + 600)
-        nodes['transform']['xpos'].setValue(nodes['Axis']['xpos'].value())
-    except:
-        pass
-
-    setUp['element'] = nuke.createNode('Dot', inpanel=False)
-    setUp['element']['label'].setValue('element')
-    setUp['element']['xpos'].setValue(nodes['transform']['xpos'].value())
-    setUp['element']['ypos'].setValue(nodes['transform']['ypos'].value()-300)
-    setUp['element'].setInput(0, None)
-    setUp['transform'] = nuke.createNode('Transform', inpanel=False)
-    setUp['transform']['label'].setValue('>THIS<')
-    setUp['transform']['xpos'].setValue(nodes['transform']['xpos'].value())
-    setUp['transform']['ypos'].setValue(nodes['transform']['ypos'].value() - 100)
-    setUp['transform']['center'].setExpression('input.width/2', 0)
-    setUp['transform']['center'].setExpression('input.height/2', 1)
-    setUp['transform'].setInput(0, setUp['element'])
-
-    setUp['bg1'] = nuke.createNode('Dot', inpanel=False)
-    setUp['bg1']['label'].setValue('BG')
-    setUp['bg1']['xpos'].setValue(nodes['transform']['xpos'].value() + 200)
-    setUp['bg1']['ypos'].setValue(nodes['transform']['ypos'].value() - 300)
-    setUp['bg1'].setInput(0, None)
-    setUp['remove'] = nuke.createNode('Remove', inpanel=False)
-    setUp['remove']['operation'].setValue('remove')
-    setUp['remove']['channels'].setValue('all')
-    setUp['remove']['xpos'].setValue(nodes['transform']['xpos'].value() + 200)
-    setUp['remove']['ypos'].setValue(nodes['transform']['ypos'].value() -200)
-    setUp['remove'].setInput(0, setUp['bg1'])
-    try:
-        nodes['Cam']['create_distort'].execute()
-        setUp['undistorted1'] = nuke.allNodes('Group')[0]
-        setUp['undistorted1']['xpos'].setValue(nodes['transform']['xpos'].value() + 200)
-        setUp['undistorted1']['ypos'].setValue(nodes['transform']['ypos'].value() + -100)
-        setUp['undistorted1'].setInput(0, setUp['remove'])
-    except:
-        pass
-    setUp['merge1'] = nuke.createNode('Merge2')
-    setUp['merge1']['xpos'].setValue(nodes['transform']['xpos'].value() + 200)
-    setUp['merge1']['ypos'].setValue(nodes['transform']['ypos'].value())
-    try:
-        setUp['merge1'].setInput(0, setUp['undistorted1'])
-    except:
-        setUp['merge1'].setInput(0, setUp['remove'])
-    setUp['merge1'].setInput(1, nodes['transform'])
-
-    try:
-        nodes['Cam']['create_distort'].execute()
-        setUp['undistorted2'] = nuke.allNodes('Group')[0]
-        setUp['undistorted2']['xpos'].setValue(nodes['transform']['xpos'].value() + 400)
-        setUp['undistorted2']['ypos'].setValue(nodes['transform']['ypos'].value()-25)
-        setUp['undistorted2'].setInput(0, setUp['merge1'])
-        setUp['undistorted2']['mode'].setValue('Distort')
-    except:
-        pass
-    setUp['bg2'] = nuke.createNode('Dot', inpanel=False)
-    setUp['bg2']['label'].setValue('BG')
-    setUp['bg2']['xpos'].setValue(nodes['transform']['xpos'].value() + 650)
-    setUp['bg2']['ypos'].setValue(nodes['transform']['ypos'].value() - 300)
-    setUp['bg2'].setInput(0, None)
-
-    setUp['merge2'] = nuke.createNode('Merge2')
-    setUp['merge2']['xpos'].setValue(nodes['transform']['xpos'].value() + 650)
-    setUp['merge2']['ypos'].setValue(nodes['transform']['ypos'].value())
-    try:
-        setUp['merge2'].setInput(0, setUp['undistorted2'])
-    except:
-        setUp['merge2'].setInput(0, setUp['merge1'])
-    setUp['merge2'].setInput(1, setUp['bg2'])
-
-    nodes['transform'].setInput(0, setUp['transform'])
-    setUp['bg1'].setInput(0, setUp['bg2'])
-
-    for node in setUp.values():
-        node.setSelected(True)
-
-    nuke.autoplace_snap_all()
-
-    for node in setUp.values():
-        node.setSelected(False)
 
 
 def cardToTrack():
@@ -700,7 +561,6 @@ def cardToTrack():
     refFrame = nuke.frame()
     fFrame = int(nuke.root().firstFrame())
     lFrame = int(nuke.root().lastFrame())
-    fullSetUp = 'Yes'
 
     # PANEL
     panel = getCardPanel()
@@ -712,7 +572,6 @@ def cardToTrack():
     getN = panel.value('Get nodes:')
     layerName = panel.value("Roto layer name")
     frameRange = panel.value("FrameRange")
-    fullSetUp = panel.value('Full SetUp')
 
     frames = frameRange.split("-")
     fFrame = int(frames[0])
@@ -758,12 +617,6 @@ def cardToTrack():
         for reconcilen in reconcileDict.values():
             applyToCornerPin(reconcilen, num, cornerPin, refFrame)
             num = num + 1
-
-    # FULL SETUP
-    if fullSetUp == 'Yes':
-        nodes['transform'] = createTransform(nodes, trackerN)
-        applyTransform(nodes['transform'], trackerN, 4)
-        getFullSetUp(nodes, refFrame)
 
     # DELETE NODES
     if getN != 'all' and getN != 'Tracker':
